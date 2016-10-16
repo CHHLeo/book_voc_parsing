@@ -3,22 +3,33 @@
 {% block title %}Flasky{% endblock %}
 
 {% block page_content %}
-    <div class="row">
-        <div class="col-sm-3">
-            <p class="text-center"><strong>Name</strong></p><br>
-            <img src="" class="img-circle person" alt="Random Name" width="255" height="255">
-        </div>
-        <div class="col-sm-3">
-            <p class="text-center"><strong>Name</strong></p><br>
-            <img src="" class="img-circle person" alt="Random Name" width="255" height="255">
-        </div>
-        <div class="col-sm-3">
-            <p class="text-center"><strong>Name</strong></p><br>
-            <img src="" class="img-circle person" alt="Random Name" width="255" height="255">
-        </div>
-        <div class="col-sm-3">
-            <p class="text-center"><strong>Name</strong></p><br>
-            <img src="" class="img-circle person" alt="Random Name" width="255" height="255">
+
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-sm-3">
+                <h3><p class="text-center"><strong>collins</strong></p></h3><br>
+                <a href="{{ url_for('main.voc_database', data="Collins") }}">
+                    <img src="static/Collins.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+                </a>
+            </div>
+            <div class="col-sm-3">
+                <h3><p class="text-center"><strong>collins remember</strong></p></h3><br>
+                <a href="{{ url_for('main.voc_database', data="Collins_remember") }}">
+                    <img src="static/Collins.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+                </a>
+            </div>
+            <div class="col-sm-3">
+                <h3><p class="text-center"><strong>coca</strong></p></h3><br>
+                <a href="{{ url_for('main.voc_database', data="Coca") }}">
+                    <img src="static/coca.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+                </a>
+            </div>
+            <div class="col-sm-3">
+                <h3><p class="text-center"><strong>coca remember</strong></p></h3><br>
+                <a href="{{ url_for('main.voc_database', data="Coca_remember") }}">
+                    <img src="static/coca.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+                </a>
+            </div>
         </div>
     </div>
 {% endblock %}

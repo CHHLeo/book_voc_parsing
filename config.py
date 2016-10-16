@@ -29,7 +29,11 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
+        'mysql://root:@localhost/AmericanYouDao?charset=utf8'
+    # SQLALCHEMY_BINDS = {
+    #     'Collins': 'mysql://root:@localhost/collins?charset=utf8',
+    #     'Coca': 'mysql://root:@localhost/AmericanYouDao?charset=utf8'
+    # }
 
 
 class TestingConfig(Config):

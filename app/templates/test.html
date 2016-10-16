@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+    <script>
+        var a = 'gggg';
+    </script>
+    <span id='test'></span>
+    <form action="{{ url_for("main.voc_database1", data='test') }}" method='post'>
+                <input type="checkbox" name='test' value='g'>
+{#        <input class="input-medium search-query" type="text" placeholder="search" id="search-box" name='test'/>#}
+        <button class="btn btn-default" type="submit"> Search</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        {#    var g = [];#}
+        {#    if (g.length == 0) {#}
+        {#        alert('test');#}
+        {#    }#}
+        {#    $.ajax({#}
+        {#        method: "GET",#}
+        {#        url: {{ url_for('main.test', tt='g') }},#}
+        {#        data: {tt:'g'}#}
+        {#    })#}
+        {#    .done(function (json) {#}
+        {#        alert("Data Saved: " + json['a']);#}
+        {#        alert("{{ kk }}");#}
+        {#        alert("{{ url_for('main.test', tt=kk) }}");#}
+        {#    });#}
+    </script>
+{% endblock %}

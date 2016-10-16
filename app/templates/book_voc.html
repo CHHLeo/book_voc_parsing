@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Flasky{% endblock %}
+
+{% block page_content %}
+    <div class="container-fluid">
+        <div class="row">
+            <form action="{{ url_for('main.book_voc', book=book, value=value) }}" method="post">
+                <h1>{{ book }}</h1>
+                <h1 id='test'></h1>
+                <div class="col-sm-11">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tbody id="xxx">
+                            {% for voc in vocs %}
+                                <tr>
+                                    {% for i in voc if loop.index < 20 %}
+                                        <td>{{ i }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {#                        {% if pagination %}#}
+                        {#                            <div class="pagination pull-right">#}
+                        {#                                {{ macros.pagination_widget(pagination, '.voc_database', data=DBdata) }}#}
+                        {#                            </div>#}
+                        {#                        {% endif %}#}
+                    </div>
+                </div>
+                <div class="col-sm-1">
+                    {#                    TODO 為什麼不會置中啊！！#}
+                    <div class="modal fade" id="modal-container-255468" role="dialog" aria-labelledby="myModalLabel"
+                         aria-hidden="true">
+                        <form action="{{ url_for('main.book_voc', book=book, value=value) }}" method=post>
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                            ×
+                                        </button>
+                                        <h4 class="modal-title" id="myModalLabel"> Delete </h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete all these words ?
+                                        <span class="modal-insert"></span>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true">No
+                                        </button>
+                                        <button class="btn btn-primary">Yes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {#                   KP: use ul and li for stack type#}
+                    <ul class="nav nav-pills nav-stacked" data-spy="affix">
+                        <li>
+                            <form class="form-search">
+                                <input class="input-medium search-query" type="text" placeholder="search"
+                                       id="search-box"/>
+                            </form>
+                        </li>
+                        <br> <br> <br> <br>
+                        <li>
+                            <button class="btn btn-primary" href="#modal-container-255468" type="button"
+                                    data-toggle="modal" onclick=show_voc();>
+                                Submit <span class="badge">0</span></button>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        var vocs_len = {{ vocs|length }};
+        var a_count = $(':checkbox:checked');
+        var a_count_num = a_count.length;
+        console.log(a_count_num);
+        for (var i = 0; i < a_count.length; i++) {
+            if ($(a_count[i]).parent().parent().parent().attr("id") == undefined) {
+                a_count_num--;
+            }
+        }
+        $(".badge").text(a_count_num);
+        //  TODO use ajax to send this count back to server and back to prevent multiple counts
+        var pre_scroll_count = 1;
+        var vocs_count = 20;
+        var pre_voc = [];
+        checked();
+        {% if page_inter %}
+            recursively_ajax(0);
+        {% endif %}
+
+        // for modal voc show
+        function show_voc() {
+            var a = $(':checkbox:checked');
+            {#                                    TODO change all for i in a to length#}
+            var pre = '<div class="table-responsive"><table class="table table-striped"><tbody>';
+            for (var i = 0; i < a.length; i++) {
+                if ($(a[i]).parent().parent().parent().attr("id") == undefined) {
+                    continue;
+                }
+                var ss = '<tr>' + $(a[i]).parent().parent().html() + '</tr>';
+                ss = ss.replace("\"checkbox\"", "\"checkbox\" checked");
+                pre += ss;
+            }
+            pre += '</tbody></table></div>';
+            var g = $(".modal-insert");
+            g.empty();
+            g.append(pre);
+        }
+
+        // for instant search
+        $("#search-box").keyup(function () {
+            var voc_to_send = $("#search-box").val();
+            if (voc_to_send != '') {
+                var send_url = '/instant_voc/' + encodeURIComponent("?book={{ book }}&value={{ value }}&voc=" + voc_to_send);
+            } else {
+                var send_url = '/instant_voc/' + encodeURIComponent("?book={{ book }}&value={{ value }}");
+            }
+            $.ajax({
+                        method: "GET",
+                        url: send_url
+                    })
+                    .done(function (json) {
+                        var content = json['vocs'];
+                        if (content != 'xxx') {
+                            $("tr").remove();
+                            console.log(json['all']);
+                            if (json['all'] == 'xxx') {
+                                var leng = vocs_count;
+                            } else {
+                                var leng = content.length;
+                            }
+                            for (var voc = 0; voc < leng; voc++) {
+                                {#                                i TODO search when ajaxing#}
+                                var c = '<tr>';
+                                for (var i = 0; i < content[voc].length; i++) {
+                                    c += ('<td>' + content[voc][i] + '</td>');
+                                }
+                                c += '</tr>';
+                                $('#xxx').append(c);
+                            }
+                            $(':checkbox').off('click');
+                            checked();
+                        }
+                    });
+        });
+
+        // first show voc
+        function recursively_ajax(k) {
+            k += 1;
+            {#            TODO make same ajax a function to call#}
+            $.ajax({
+                        method: "GET",
+                        // KP: encodeURIComponent(copy url_for schenario)
+                        url: '/thread_book_voc/' + encodeURIComponent("?value={{ value }}&book={{ book }}&page_inter={{ page_inter }}&k=" + k + "&pages={{ pages }}")
+                    })
+                    .done(function (json) {
+                        // KP: use flask variable in javascript
+                        {#                        alert("{{ value }}");#}
+                        var content = json['vocs'];
+                        console.log(content);
+                        if (content != 'xxx') {
+                            for (var voc = 0; voc < content.length; voc++) {
+                                console.log(voc);
+                                if (ex_append(content[voc][0], content[voc][2], content[voc][4]) == false) {
+                                    var c = '<tr>';
+                                    for (var i = 0; i < content[voc].length; i++) {
+                                        c += ('<td>' + content[voc][i] + '</td>');
+                                    }
+                                    c += '</tr>';
+                                    pre_voc.push(c);
+                                    if ($("tr").length < pre_scroll_count * vocs_count) {
+                                        $('#xxx').append(pre_voc[0]);
+                                        pre_voc.shift()
+                                    }
+                                }
+                            }
+                            $(':checkbox').off('click');
+                            checked();
+                            recursively_ajax(k);
+                        }
+                    });
+        }
+
+        function checked() {
+            $(':checkbox').click(function () {
+                var val = $(this).is(':checked');
+                if (val) {
+                    $(".badge").text(++a_count_num);
+                } else {
+                    $(".badge").text(--a_count_num);
+                }
+            });
+        }
+
+        function ex_append(voc, pos, ex) {
+            var re_value = false;
+            $("tr").each(function () {
+                var g = $(this).children("td:nth-child(odd)");
+                // KP: jquery's function need $ to trigger
+                if (($(g[0]).text() == voc) && ($(g[1]).text() == pos)) {
+                    $(g[2]).append('<br><br>' + ex);
+                    re_value = true;
+                    // KP: return false to break, return true to continue
+                    return false;
+                }
+            });
+            return re_value;
+        }
+
+        // scroll voc
+        var vc_total = vocs_count;
+        $(window).scroll(function () {
+            if ($(window).scrollTop() >= $(document).height() - $(window).height() - 10) {
+                pre_scroll_count += 1;
+                {#                document.getElementById("test").innerHTML = pre_scroll_count;#}
+                while ($("tr").length < pre_scroll_count * vocs_count) {
+                    // KP: javascript can only use this way to check empty array
+                    if (pre_voc.length == 0) {
+                        break;
+                    }
+                    $('#xxx').append(pre_voc[0]);
+                    pre_voc.shift()
+                }
+                $(':checkbox').off('click');
+                checked();
+                $.ajax({
+                            method: "GET",
+                            // KP: encodeURIComponent(copy url_for schenario)
+                            url: '/thread_book_voc_total/' + encodeURIComponent("?book={{ book }}&value={{ value }}")
+                        })
+                        .done(function (json) {
+                            // KP: use flask variable in javascript
+                            {#                        alert("{{ value }}");#}
+                            var content = json['vocs'];
+                            if (content == 'xxx') {
+                                return;
+                            }
+                            var c = '';
+                            var vc_end = vc_total + vocs_count;
+                            if (vc_end > vocs_len) {
+                                vc_end = vocs_len;
+                            }
+                            for (i = vc_total; i < vc_end; i++) {
+                                c += '<tr>';
+                                for (j in content[i]) {
+                                    c += ('<td>' + content[i][j] + '</td>');
+                                }
+                                c += '</tr>';
+                            }
+                            vc_total += vocs_count;
+                            $('#xxx').append(c);
+                            $(':checkbox').off('click');
+                            checked();
+                        });
+            }
+        });
+
+    </script>
+{% endblock %}
+{# KP: flask variable can't be controlled again when end the file #}

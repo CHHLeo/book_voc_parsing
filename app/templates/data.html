@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Flasky{% endblock %}
+
+{% block page_content %}
+    <style>
+        .ok-color {
+            color: #90EE90;
+        }
+    </style>
+
+    <div class="container-fluid">
+        <div class="row">
+            <form action="{{ url_for("main.voc_database", data=DBdata, page=pagination.page) }}" method="post">
+                <h1>{{ DBdata }}</h1>
+                <div class="col-sm-11">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tbody id="xxx">
+                            {% for index, data in datas %}
+                                <tr>
+                                    <td>{{ index + 1 }}</td>
+                                    <td>
+                                        {% if DBdata=='Collins' or DBdata=='Collins_remember' %}
+                                            {#                                            <input type="checkbox" name={{ data.voc }}>#}
+                                            {#                                            KP: make item clickable(set style)#}
+                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"
+                                                  style="cursor: pointer;"></span>
+                                        {% elif DBdata=='Coca' or DBdata=='Coca_remember' %}
+                                            {#                                            <input type="checkbox" name="{{ data.voc }}" value="{{ data.pos }}">#}
+                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"
+                                                  style="cursor: pointer;"></span>
+                                        {% endif %}
+                                    </td>
+                                    {% if DBdata=='Collins' or DBdata=='Collins_remember' %}
+                                        <td>{{ data.voc }}</td>
+                                        <td>{{ data.star }}</td>
+                                        <td>{{ data.Definition }}</td>
+                                        <td>{{ data.phonetic }}</td>
+                                    {% elif DBdata=='Coca' or DBdata=='Coca_remember' %}
+                                        <td>{{ data.voc }}</td>
+                                        <td>{{ data.pos }}</td>
+                                        <td>{{ data.rank }}</td>
+                                        <td>{{ data.Definition }}</td>
+                                        <td>{{ data.phonetic }}</td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if pagination %}
+                            <div class="pagination pull-right">
+                                {{ macros.pagination_widget(pagination, '.voc_database', data=DBdata, showall=showall, voc=voc) }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-sm-1">
+                    <div class="modal fade" id="modal-container-255468" role="dialog" aria-labelledby="myModalLabel"
+                         aria-hidden="true">
+                        <form action="{{ url_for("main.voc_database", data=DBdata, page=pagination.page) }}"
+                              method="post">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                            ×
+                                        </button>
+                                        <h4 class="modal-title" id="myModalLabel"> Delete </h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete all these words ?
+                                        <span class="modal-insert"></span>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true">No
+                                        </button>
+                                        <button class="btn btn-primary" onclick=localStorage.clear();>Yes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {#                   KP: use ul and li for stack type#}
+                    <ul class="nav nav-pills nav-stacked" data-spy="affix">
+                        <li>
+                            {#                        KP: can't use nested form#}
+                            <input class="input-medium search-query" type="text" placeholder="search"
+                                   id="search-box" name='xsearchx'/>
+                            <button id="search-button" class="btn btn-default" type="submit" name='b_search'> Search
+                            </button>
+                        </li>
+                        {#                        <li>#}
+                        {#                            <button type="submit" class="btn btn-default">Search</button>#}
+                        {#                        </li>#}
+                        {% if showall %}
+                            <li>
+                                {#                            TODO why this buttom can reach side bar#}
+                                <button class="btn btn-primary" type="submit" name='b_all'> ShowAll</button>
+                            </li>
+                        {% endif %}
+                        <br> <br> <br> <br>
+                        <li>
+                            <button class="btn btn-primary" href="#modal-container-255468" type="button"
+                                    data-toggle="modal" onclick=show_voc();>
+                                Submit <span class="badge">0</span></button>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        {#        TODO set all code to hoist #}
+        // KP: stop enter trigger in input text
+        $("#search-box").keypress(function (event) {
+            if (event.keyCode == 13) {
+                return false;
+            }
+        });
+        // custom enter tigger scenario
+        $("#search-box").keyup(function (event) {
+            if (event.keyCode == 13) {
+                $("#search-button").click();
+            }
+        });
+
+        var a_count = localStorage.getItem('a_count');
+        if (a_count == null) {
+            a_count = 0;
+            localStorage.setItem('a_count', a_count);
+        }
+        $(".badge").text(a_count);
+        var data_dic = JSON.parse(localStorage.getItem('data_dic'));
+        if (data_dic == null) {
+            data_dic = [];
+            localStorage.setItem('data_dic', JSON.stringify(data_dic));
+        }
+        for (var i = 0; i < data_dic.length; i++) {
+            $("tr").each(function () {
+                var tds = $(this).children();
+                {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                    if (data_dic[i]['voc'] == $(tds[2]).text() &&
+                            data_dic[i]['pos'] == $(tds[3]).text()) {
+                        $(tds[1].child()).removeClass('glyphicon-remove');
+                        $(tds[1].child()).addClass('glyphicon-ok');
+                        $(".glyphicon.glyphicon-ok").off('click');
+                        ok();
+                        return false;
+                    }
+                {% else %}
+                    if (data_dic[i]['voc'] == $(tds[2]).text()) {
+                        $(tds[1]).find('span').removeClass('glyphicon-remove');
+                        $(tds[1]).find('span').addClass('glyphicon-ok');
+                        $(".glyphicon.glyphicon-ok").off('click');
+                        ok();
+                        return false;
+                    }
+                {% endif %}
+            });
+        }
+        mouse_register();
+        remove();
+
+        function js_refresh_ok(dataObject) {
+            $("tr").each(function () {
+                var tds = $(this).children();
+                {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                    if (dataObject['voc'] == $(tds[2]).text() &&
+                            dataObject['pos'] == $(tds[3]).text()) {
+                        if ($(tds[1]).find('span').attr('class').indexOf('glyphicon-ok') != -1) {
+                            $(tds[1]).find('span').removeClass('glyphicon-ok');
+                            $(tds[1]).find('span').addClass('glyphicon-remove');
+                            $(".glyphicon.glyphicon-remove").off('click');
+                            remove();
+                            return false;
+                        }
+                    }
+                {% else %}
+                    if (dataObject['voc'] == $(tds[2]).text()) {
+                        if ($(tds[1]).find('span').attr('class').indexOf('glyphicon-ok') != -1) {
+                            $(tds[1]).find('span').removeClass('glyphicon-ok');
+                            $(tds[1]).find('span').addClass('glyphicon-remove');
+                            $(".glyphicon.glyphicon-remove").off('click');
+                            remove();
+                            return false;
+                        }
+                    }
+                {% endif %}
+            });
+        }
+
+        function js_refresh_remove(dataObject) {
+            $("tr").each(function () {
+                var tds = $(this).children();
+                {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                    if (dataObject['voc'] == $(tds[2]).text() &&
+                            dataObject['pos'] == $(tds[3]).text()) {
+                        if ($(tds[1]).find('span').attr('class').indexOf('glyphicon-remove') != -1) {
+                            $(tds[1]).find('span').removeClass('glyphicon-remove');
+                            $(tds[1]).find('span').addClass('glyphicon-ok');
+                            $(".glyphicon.glyphicon-ok").off('click');
+                            ok();
+                            return false;
+                        }
+                    }
+                {% else %}
+                    if (dataObject['voc'] == $(tds[2]).text()) {
+                        if ($(tds[1]).find('span').attr('class').indexOf('glyphicon-remove') != -1) {
+                            $(tds[1]).find('span').removeClass('glyphicon-remove');
+                            $(tds[1]).find('span').addClass('glyphicon-ok');
+                            $(".glyphicon.glyphicon-ok").off('click');
+                            ok();
+                            return false;
+                        }
+                    }
+                {% endif %}
+            });
+        }
+
+        function show_voc() {
+            // change to a select
+            var pre = '<div class="table-responsive"><table class="table table-striped"><tbody>';
+            data_dic = JSON.parse(localStorage.getItem('data_dic'));
+            for (var i = 0; i < data_dic.length; i++) {
+                var ss = data_dic[i]['vhtml'];
+                {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                    var ins = '<input type="hidden" name=' + data_dic[i]["voc"] + ' value=' + data_dic[i]["pos"] + '>';
+                {% else %}
+                    var ins = '<input type="hidden" name=' + data_dic[i]["voc"] + '>';
+                {% endif %}
+                ss = ss.replace('tr>', 'tr id="xxx">');
+                ss = ss.replace('<span', ins + '<span');
+                {#                console.log(ss);#}
+                pre += ss;
+            }
+            pre += '</tbody></table></div>';
+            var g = $(".modal-insert");
+            g.empty();
+            g.append(pre);
+
+            {#            event re register#}
+            $(".glyphicon.glyphicon-ok").off('click');
+            ok();
+            $(".glyphicon").off('mouseover');
+            $(".glyphicon").off('mouseout');
+            mouse_register();
+        }
+
+        function find_index(data_dic, dataObject) {
+            for (var i = 0; i < data_dic.length; i++) {
+                if (data_dic[i]['voc'] == dataObject['voc'] &&
+                        data_dic[i]['pos'] == dataObject['pos']) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        {#        all event register #}
+        function mouse_register() {
+            $(".glyphicon").mouseover(function () {
+                $(this).addClass('ok-color');
+            });
+            $(".glyphicon").mouseout(function () {
+                $(this).removeClass('ok-color');
+            });
+        }
+
+        function ok() {
+            $(".glyphicon.glyphicon-ok").click(function () {
+                $(this).removeClass('glyphicon-ok');
+                $(this).addClass('glyphicon-remove');
+                $(".glyphicon.glyphicon-remove").off('click');
+                remove();
+                var a_count = localStorage.getItem('a_count');
+                localStorage.setItem('a_count', --a_count);
+                $(".badge").text(a_count);
+                {#            TODO decrease the dupulicate between remove and ok#}
+                var voc = $(this).parent().next().text();
+                var pos = '';
+                {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                    pos = $(this).parent().next().next().text();
+                {% endif %}
+                var vhtml = $(this).parent().parent().html();
+                vhtml = '<tr>' + vhtml + '</tr>';
+                var dataObject = {'voc': voc, 'pos': pos, 'vhtml': vhtml};
+
+                data_dic = JSON.parse(localStorage.getItem('data_dic'));
+                // KP: pop a value
+                index = find_index(data_dic, dataObject);
+                console.log(index);
+                if (index > -1)
+                    data_dic.splice(index, 1);
+                localStorage.setItem('data_dic', JSON.stringify(data_dic));
+                if ($(this).parent().parent().attr("id") == 'xxx') {
+                    js_refresh_ok(dataObject);
+                    {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                        $(this).prev().removeAttr('name');
+                        $(this).prev().removeAttr('value');
+                    {% else %}
+                        $(this).prev().removeAttr('name');
+                    {% endif %}
+                }
+
+                {#                                data_dic = JSON.parse(localStorage.getItem('data_dic'));#}
+                {#                                for (var i = 0; i < data_dic.length; i++) {#}
+                {#                                    console.log(data_dic[i]['voc']);#}
+                {#                                    console.log(data_dic[i]['pos']);#}
+                {#                                    console.log(data_dic[i]['vhtml']);#}
+                {#            }#}
+            });
+        }
+        function remove() {
+            $(".glyphicon.glyphicon-remove").click(function () {
+                $(this).removeClass('glyphicon-remove');
+                $(this).addClass('glyphicon-ok');
+                $(".glyphicon.glyphicon-ok").off('click');
+                ok();
+                var a_count = localStorage.getItem('a_count');
+                localStorage.setItem('a_count', ++a_count);
+                $(".badge").text(a_count);
+                var voc = $(this).parent().next().text();
+                var pos = '';
+                {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                    pos = $(this).parent().next().next().text();
+                {% endif %}
+                var vhtml = $(this).parent().parent().html();
+                vhtml = '<tr>' + vhtml + '</tr>';
+                var dataObject = {'voc': voc, 'pos': pos, 'vhtml': vhtml};
+
+                data_dic = JSON.parse(localStorage.getItem('data_dic'));
+                data_dic.push(dataObject);
+                localStorage.setItem('data_dic', JSON.stringify(data_dic));
+
+                if ($(this).parent().parent().attr("id") == 'xxx') {
+                    js_refresh_remove(dataObject);
+                    {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
+                        $(this).prev().attr('name', dataObject['voc']);
+                        $(this).prev().attr('value', dataObject['pos']);
+                    {% else %}
+                        $(this).prev().attr('name', dataObject['voc']);
+                    {% endif %}
+                }
+
+            });
+        }
+        {#    end all event register#}
+
+    </script>
+{% endblock %}

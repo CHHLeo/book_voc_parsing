@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Flasky{% endblock %}
+{#{% block head %}#}
+{#    {{ super() }}#}
+{#    <style>#}
+{#        .tweaked-margin {#}
+{#            margin-right: 0px;#}
+{#        }#}
+{#    </style>#}
+{#{% endblock %}#}
+
+{% block page_content %}
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-sm-12">
+                <form action="{{ url_for('main.book') }}" method=post enctype=multipart/form-data>
+                    <span class='label label-info' id="upload-file-info"></span>
+                    <label class="btn btn-primary" for="my-file-selector">
+                        <input id="my-file-selector" type="file" style="display:none;" name="my_file"
+                               onchange="file_names()" multiple> Browse
+                    </label>
+                    <button class="btn btn-success" type="submit" value="Upload">submit</button>
+                </form>
+            </div>
+            {% for book in books_list %}
+                <div class="col-sm-12">
+                    <h3><p class="text-center"><strong>{{ book }}</strong></p></h3>
+                    <br>
+                    <div class="col-sm-4 col-sm-offset-1">
+                        <a href="{{ url_for('main.book_voc', book=book, value='_Collins') }}">
+                            <img src="static/Collins.jpg" class="img-circle person" alt="Random Name" width="255"
+                                 height="255">
+                        </a>
+                    </div>
+                    <div class="col-sm-4 col-sm-offset-2">
+                        <div class="modal fade" id="modal-container-255468" role="dialog" aria-labelledby="myModalLabel"
+                             aria-hidden="true">
+                            <form action="{{ url_for('main.book') }}" method=post>
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                                ×
+                                            </button>
+                                            <h4 class="modal-title" id="myModalLabel"> Delete </h4>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete {{ book }} ?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true">No
+                                            </button>
+                                            <button class="btn btn-primary">Yes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <button class="close" aria-label="Close" id="modal-255468" href="#modal-container-255468"
+                                role="button" data-toggle="modal"> ×
+                        </button>
+                        <a href="{{ url_for('main.book_voc', book=book, value='_Coca') }}">
+                            <img src="static/coca.jpg" class="img-circle person" alt="Random Name" width="255"
+                                 height="255">
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        function file_names() {
+            var files = $('#my-file-selector')[0].files;
+            var file_name = '';
+            for (var i = 0; i < files.length; i++) {
+                file_name += files[i].name + '<br>';
+            }
+            $('#upload-file-info').html(file_name);
+        }
+    </script>
+    {#        <script>#}
+    {#            var x = '<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span> </button>'#}
+    {#            {% for book in books_list %}#}
+    {#                var a = '<div class="col-sm-12"> ' +#}
+    {#                        '<h3><p class="text-center"><strong>{{ book }}</strong></p></h3> <br>' +#}
+    {#                        '<div class="col-sm-4 col-sm-offset-1">' + x +#}
+    {#                        ' <a href="{{ url_for('main.voc_database', data="Collins") }}"> ' +#}
+    {#                        '<img src="static/Collins.jpg" class="img-circle person" alt="Random Name" width="255" height="255"> </a>' +#}
+    {#                        '</div>' +#}
+    {#                        '<div class="col-sm-4 col-sm-offset-2">' + x +#}
+    {#                        ' <a href="{{ url_for('main.voc_database', data="Collins") }}"> ' +#}
+    {#                        '<img src="static/coca.jpg" class="img-circle person" alt="Random Name" width="255" height="255"> </a>' +#}
+    {#                        '</div></div>'#}
+    {#                $("form").after(a);#}
+    {#            {% endfor %}#}
+    {#        </script>#}
+{% endblock %}
