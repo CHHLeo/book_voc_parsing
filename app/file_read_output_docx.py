@@ -1,6 +1,8 @@
 import re
 import sqlite3
 import collections
+import threading
+
 import nltk
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import wordnet as wn
@@ -22,16 +24,16 @@ def is_search_voc(voc, pros, db, app, value):
     #     return [False, cur_big_list]
     if value == '_Collins':
         cur_list = db.engine.execute(text('SELECT phonetic, definition FROM '
-                                                                   'vocabulary WHERE lower(voc)= "' +
-                                                                   voc.lower() + '"' + filter))
+                                          'vocabulary WHERE lower(voc)= "' +
+                                          voc.lower() + '"' + filter))
         cur_list = list(cur_list)
         if cur_list:
             return [True, cur_list]
     else:
         cur_list = db.engine.execute(text('SELECT phonetic,definition FROM '
-                                                                'AmericanYouDao WHERE lower(voc) ="' +
-                                                                voc.lower() + '" AND pos = "' + pros + '"' +
-                                                                filter))
+                                          'AmericanYouDao WHERE lower(voc) ="' +
+                                          voc.lower() + '" AND pos = "' + pros + '"' +
+                                          filter))
         cur_list = list(cur_list)
         if cur_list:
             return [True, cur_list]
@@ -61,9 +63,13 @@ def change_index(all_voc, all_ex, ex_length):
 sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 tagger = nltk.data.load('taggers/maxent_treebank_pos_tagger/english.pickle')
 
+morphy_lock = threading.Lock()
+
 
 def _morphy(word, pos):
+    morphy_lock.acquire()
     exceptions = wn._exception_map[pos]
+    morphy_lock.release()
     if word in exceptions:
         return exceptions[word]
 
@@ -167,8 +173,8 @@ def srt_content_handle(content):
 # for Page in range(pdfReader.numPages):
 #     text = pdfReader.getPage(Page).extractText()
 #     print text
-    # text_list.append(text)
-    #     print text
+# text_list.append(text)
+#     print text
 # content_handle(' '.join(text_list), ex_length)
 # pdfFileObj.close()
 #

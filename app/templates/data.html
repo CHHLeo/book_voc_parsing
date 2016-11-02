@@ -76,7 +76,11 @@
                                     <div class="modal-footer">
                                         <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true">No
                                         </button>
-                                        <button class="btn btn-primary" onclick=localStorage.clear();>Yes</button>
+                                        <button class="btn btn-primary"
+                                                onclick=localStorage.removeItem('data_dic'+'{{ DBdata }}');>Yes
+                                        </button>
+                                        {#                                        <button class="btn btn-primary" onclick=localStorage.clear();>Yes#}
+                                        {#                                        </button>#}
                                     </div>
                                 </div>
                             </div>
@@ -118,6 +122,7 @@
     {{ super() }}
     <script>
         {#        TODO set all code to hoist #}
+        {#        localStorage.clear();#}
         // KP: stop enter trigger in input text
         $("#search-box").keypress(function (event) {
             if (event.keyCode == 13) {
@@ -131,17 +136,12 @@
             }
         });
 
-        var a_count = localStorage.getItem('a_count');
-        if (a_count == null) {
-            a_count = 0;
-            localStorage.setItem('a_count', a_count);
-        }
-        $(".badge").text(a_count);
-        var data_dic = JSON.parse(localStorage.getItem('data_dic'));
+        var data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ DBdata }}'));
         if (data_dic == null) {
             data_dic = [];
-            localStorage.setItem('data_dic', JSON.stringify(data_dic));
+            localStorage.setItem('data_dic' + '{{ DBdata }}', JSON.stringify(data_dic));
         }
+        $(".badge").text(data_dic.length);
         for (var i = 0; i < data_dic.length; i++) {
             $("tr").each(function () {
                 var tds = $(this).children();
@@ -227,7 +227,7 @@
         function show_voc() {
             // change to a select
             var pre = '<div class="table-responsive"><table class="table table-striped"><tbody>';
-            data_dic = JSON.parse(localStorage.getItem('data_dic'));
+            data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ DBdata }}'));
             for (var i = 0; i < data_dic.length; i++) {
                 var ss = data_dic[i]['vhtml'];
                 {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
@@ -279,9 +279,6 @@
                 $(this).addClass('glyphicon-remove');
                 $(".glyphicon.glyphicon-remove").off('click');
                 remove();
-                var a_count = localStorage.getItem('a_count');
-                localStorage.setItem('a_count', --a_count);
-                $(".badge").text(a_count);
                 {#            TODO decrease the dupulicate between remove and ok#}
                 var voc = $(this).parent().next().text();
                 var pos = '';
@@ -292,13 +289,14 @@
                 vhtml = '<tr>' + vhtml + '</tr>';
                 var dataObject = {'voc': voc, 'pos': pos, 'vhtml': vhtml};
 
-                data_dic = JSON.parse(localStorage.getItem('data_dic'));
+                data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ DBdata }}'));
                 // KP: pop a value
                 index = find_index(data_dic, dataObject);
                 console.log(index);
                 if (index > -1)
                     data_dic.splice(index, 1);
-                localStorage.setItem('data_dic', JSON.stringify(data_dic));
+                localStorage.setItem('data_dic' + '{{ DBdata }}', JSON.stringify(data_dic));
+                $(".badge").text(data_dic.length);
                 if ($(this).parent().parent().attr("id") == 'xxx') {
                     js_refresh_ok(dataObject);
                     {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
@@ -309,7 +307,7 @@
                     {% endif %}
                 }
 
-                {#                                data_dic = JSON.parse(localStorage.getItem('data_dic'));#}
+                {#                                data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ DBdata }}'));#}
                 {#                                for (var i = 0; i < data_dic.length; i++) {#}
                 {#                                    console.log(data_dic[i]['voc']);#}
                 {#                                    console.log(data_dic[i]['pos']);#}
@@ -323,9 +321,6 @@
                 $(this).addClass('glyphicon-ok');
                 $(".glyphicon.glyphicon-ok").off('click');
                 ok();
-                var a_count = localStorage.getItem('a_count');
-                localStorage.setItem('a_count', ++a_count);
-                $(".badge").text(a_count);
                 var voc = $(this).parent().next().text();
                 var pos = '';
                 {% if DBdata=='Coca' or DBdata=='Coca_remember' %}
@@ -335,9 +330,10 @@
                 vhtml = '<tr>' + vhtml + '</tr>';
                 var dataObject = {'voc': voc, 'pos': pos, 'vhtml': vhtml};
 
-                data_dic = JSON.parse(localStorage.getItem('data_dic'));
+                data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ DBdata }}'));
                 data_dic.push(dataObject);
-                localStorage.setItem('data_dic', JSON.stringify(data_dic));
+                localStorage.setItem('data_dic' + '{{ DBdata }}', JSON.stringify(data_dic));
+                $(".badge").text(data_dic.length);
 
                 if ($(this).parent().parent().attr("id") == 'xxx') {
                     js_refresh_remove(dataObject);

@@ -1,4 +1,5 @@
 import os
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -19,7 +20,8 @@ class Config:
     FLASKY_POSTS_PER_PAGE = 20
     FLASKY_FOLLOWERS_PER_PAGE = 50
     FLASKY_COMMENTS_PER_PAGE = 30
-    FLASKY_SLOW_DB_QUERY_TIME=0.5
+    FLASKY_SLOW_DB_QUERY_TIME = 0.5
+    PRESERVE_CONTEXT_ON_EXCEPTION = False
 
     @staticmethod
     def init_app(app):
@@ -28,8 +30,15 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
-        'mysql://root:@localhost/AmericanYouDao?charset=utf8'
+    user_name = 'ch2leo'
+    password = '21070527'
+    database_host_address = 'ch2leo.mysql.pythonanywhere-services.com'
+    database_name = 'ch2leo$americanyoudao'
+    py_url = 'mysql://' + user_name + ':' + password + '@' + database_host_address + '/' + database_name + '?charset=utf8'
+    # SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
+    #                           'mysql://root:@localhost/AmericanYouDao?charset=utf8'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or py_url
+
     # SQLALCHEMY_BINDS = {
     #     'Collins': 'mysql://root:@localhost/collins?charset=utf8',
     #     'Coca': 'mysql://root:@localhost/AmericanYouDao?charset=utf8'
@@ -39,13 +48,13 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
+                              'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
     WTF_CSRF_ENABLED = False
 
 
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+                              'sqlite:///' + os.path.join(basedir, 'data.sqlite')
 
 
 config = {

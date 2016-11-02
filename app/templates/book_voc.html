@@ -14,19 +14,16 @@
                         <table class="table table-striped">
                             <tbody id="xxx">
                             {% for voc in vocs %}
-                                <tr>
-                                    {% for i in voc if loop.index < 20 %}
-                                        <td>{{ i }}</td>
-                                    {% endfor %}
-                                </tr>
+                                {% if loop.index < 20 %}
+                                    <tr>
+                                        {% for i in voc %}
+                                            <td>{{ i }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endif %}
                             {% endfor %}
                             </tbody>
                         </table>
-                        {#                        {% if pagination %}#}
-                        {#                            <div class="pagination pull-right">#}
-                        {#                                {{ macros.pagination_widget(pagination, '.voc_database', data=DBdata) }}#}
-                        {#                            </div>#}
-                        {#                        {% endif %}#}
                     </div>
                 </div>
                 <div class="col-sm-1">
@@ -49,7 +46,11 @@
                                     <div class="modal-footer">
                                         <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true">No
                                         </button>
-                                        <button class="btn btn-primary">Yes</button>
+                                        <button class="btn btn-primary"
+                                                {#                                                TODO test if it is work#}
+                                                onclick=localStorage.removeItem('data_dic'{{ book }}{{ value }});>
+                                            Yes
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -58,16 +59,26 @@
                     {#                   KP: use ul and li for stack type#}
                     <ul class="nav nav-pills nav-stacked" data-spy="affix">
                         <li>
-                            <form class="form-search">
-                                <input class="input-medium search-query" type="text" placeholder="search"
-                                       id="search-box"/>
-                            </form>
+                            <input style="display:none;" class="input-medium search-query" type="text"
+                                   placeholder="search"
+                                   id="search-box"/>
                         </li>
                         <br> <br> <br> <br>
                         <li>
-                            <button class="btn btn-primary" href="#modal-container-255468" type="button"
+                            <button style="display:none;" class="btn btn-primary" href="#modal-container-255468"
+                                    type="button" id="submit-btn"
                                     data-toggle="modal" onclick=show_voc();>
                                 Submit <span class="badge">0</span></button>
+                            {#                            <p id="demo"></p>#}
+                            {#                            <button type='button' onclick=test();>test</button>#}
+                            {#                            <script>#}
+                            {#                                function test() {#}
+                            {#                                    document.getElementById("demo").innerHTML = $("tr").length;#}
+                            {#                                }#}
+                            {#                            </script>#}
+                        </li>
+                        <li>
+                            <img src='../static/ajax-loader.gif' id='loading-icon'>
                         </li>
                     </ul>
                 </div>
@@ -79,42 +90,131 @@
 {% block scripts %}
     {{ super() }}
     <script>
-        var vocs_len = {{ vocs|length }};
-        var a_count = $(':checkbox:checked');
-        var a_count_num = a_count.length;
-        console.log(a_count_num);
-        for (var i = 0; i < a_count.length; i++) {
-            if ($(a_count[i]).parent().parent().parent().attr("id") == undefined) {
-                a_count_num--;
-            }
+        var data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ book }}' + '{{ value }}'));
+
+        if (data_dic == null) {
+            data_dic = [];
+            localStorage.setItem('data_dic' + '{{ book }}' + '{{ value }}', JSON.stringify(data_dic));
         }
-        $(".badge").text(a_count_num);
+
+        $(".badge").text(data_dic.length);
+
         //  TODO use ajax to send this count back to server and back to prevent multiple counts
         var pre_scroll_count = 1;
         var vocs_count = 20;
-        var pre_voc = [];
-        checked();
-        {% if page_inter %}
-            recursively_ajax(0);
-        {% endif %}
+        re_register();
 
-        // for modal voc show
-        function show_voc() {
-            var a = $(':checkbox:checked');
-            {#                                    TODO change all for i in a to length#}
-            var pre = '<div class="table-responsive"><table class="table table-striped"><tbody>';
-            for (var i = 0; i < a.length; i++) {
-                if ($(a[i]).parent().parent().parent().attr("id") == undefined) {
-                    continue;
-                }
-                var ss = '<tr>' + $(a[i]).parent().parent().html() + '</tr>';
-                ss = ss.replace("\"checkbox\"", "\"checkbox\" checked");
-                pre += ss;
+        $("#search-box").keypress(function (event) {
+            if (event.keyCode == 13) {
+                return false;
             }
-            pre += '</tbody></table></div>';
-            var g = $(".modal-insert");
-            g.empty();
-            g.append(pre);
+        });
+
+        function recursive_check(cs) {
+            $.get('/check_up/' + encodeURIComponent("?book={{ book }}&value={{ value }}&_cached_stamp=" + cs))
+                    .done(function (json) {
+                        if ($("#search-box").is(":visible")) {
+                            return false
+                        }
+
+                        var cs = json['cs'];
+                        var content = json['vocs'];
+
+                        var c = '';
+                        var data_dic_length = JSON.parse(localStorage.getItem('data_dic' + '{{ book }}' + '{{ value }}')).length;
+                        var vc_total = $("tr").length - 1 - data_dic_length;
+                        var vocs_len = content.length;
+                        for (var i = vc_total; i < vocs_len; i++) {
+                            if (i >= pre_scroll_count * vocs_count) {
+                                break
+                            }
+                            c += '<tr>';
+                            for (var j = 0; j < content[i].length; j++) {
+                                c += ('<td>' + content[i][j] + '</td>');
+                            }
+                            c += '</tr>';
+                        }
+                        $('#xxx').append(c);
+                        re_register();
+
+                        recursive_check(cs);
+                    });
+        }
+
+        $.get('{{ url_for('main.check_file_exist', book=book, value=value) }}')
+                .done(function () {
+                    $("#search-box").show();
+                    $("#submit-btn").show();
+                    $("#loading-icon").hide();
+                    {#                    pre_voc.length = 0;#}
+                    {#                    for (var i = 0; i < kkk_list.length; i++) {#}
+                    // KP: abort ajax
+                    {#                        kkk_list[i].abort();#}
+                    {#                    }#}
+                });
+
+        {% if page_inter %}
+            recursive_check(0);
+        {% endif %}
+        // storage for k
+        {#            localStorage.setItem('k' + '{{ book }}' + '{{ value }}', JSON.stringify([]));#}
+        {#            var k_list = JSON.parse(localStorage.getItem('k' + '{{ book }}' + '{{ value }}'));#}
+        {#            if (k_list == null) {#}
+        {#                k_list = [];#}
+        {#            }#}
+        {##}
+        {#            // count book splice#}
+        {#            var kkk = 0;#}
+        {#            while (true) {#}
+        {#                TODO check kkk is right or not#}
+        {#                kkk += 1;#}
+        {#                if (kkk * parseInt('{{ page_inter }}') + 1 >= parseInt('{{ pages }})')) {#}
+        {#                    break;#}
+        {#                }#}
+        {#            }#}
+        {##}
+        {#            // KP: like python range, javascirpt array#}
+        {#            // range(kkk) array#}
+        {#            var aaa = Array.apply(null, {length: kkk}).map(Number.call, Number);#}
+        {##}
+        {#            for (var i = 0; i < k_list.length; i++) {#}
+        {#                var index = aaa.indexOf(k_list[i] - 1);#}
+        {#                if (index > -1) {#}
+        {#                    aaa.splice(index, 1);#}
+        {#                }#}
+        {#            }#}
+
+        {#            for (var i = 0; i < aaa.length; i++) {#}
+        {#                kkk_list.push(recursively_ajax(aaa[i]));#}
+        {#            }#}
+
+        {#            TODO check what apply is doing#}
+        // KP: wait until all ajax done
+        {#            $.when.apply($, kkk_list).done(function () {#}
+        {#                $("#search-box").show();#}
+        {#                $("#submit-btn").show();#}
+        {#                $("#loading-icon").hide();#}
+        {#                localStorage.setItem('k' + '{{ book }}' + '{{ value }}', JSON.stringify([]));#}
+        {#                pre_voc.length = 0;#}
+        {#            });#}
+        // KP: localStorage need to parse int
+        {#            k = parseInt(k);#}
+        {#            recursively_ajax(k);#}
+
+
+        function re_checked() {
+            for (var i = 0; i < data_dic.length; i++) {
+                $("tr").each(function () {
+                    var tds = $(this).children();
+                    if (data_dic[i]['voc'] == $(tds[0]).text() &&
+                            data_dic[i]['pos'] == $(tds[2]).text()) {
+                        if (!$(tds[1]).find('input').is(':checked')) {
+                            $(tds[1]).find('input').prop("checked", true);
+                            return false;
+                        }
+                    }
+                });
+            }
         }
 
         // for instant search
@@ -125,40 +225,177 @@
             } else {
                 var send_url = '/instant_voc/' + encodeURIComponent("?book={{ book }}&value={{ value }}");
             }
-            $.ajax({
-                        method: "GET",
-                        url: send_url
-                    })
-                    .done(function (json) {
-                        var content = json['vocs'];
-                        if (content != 'xxx') {
-                            $("tr").remove();
-                            console.log(json['all']);
-                            if (json['all'] == 'xxx') {
-                                var leng = vocs_count;
-                            } else {
-                                var leng = content.length;
-                            }
-                            for (var voc = 0; voc < leng; voc++) {
-                                {#                                i TODO search when ajaxing#}
-                                var c = '<tr>';
-                                for (var i = 0; i < content[voc].length; i++) {
-                                    c += ('<td>' + content[voc][i] + '</td>');
-                                }
-                                c += '</tr>';
-                                $('#xxx').append(c);
-                            }
-                            $(':checkbox').off('click');
-                            checked();
+            $.get(send_url).done(function (json) {
+                var content = json['vocs'];
+                if (content != 'xxx') {
+                    $("tr").remove();
+                    if (json['all'] == 'xxx') {
+                        var leng = vocs_count;
+                    } else {
+                        var leng = content.length;
+                    }
+                    var c = '';
+                    for (var voc = 0; voc < leng; voc++) {
+                        c += '<tr>';
+                        for (var i = 0; i < content[voc].length; i++) {
+                            c += ('<td>' + content[voc][i] + '</td>');
                         }
-                    });
+                        c += '</tr>';
+                    }
+                    $('#xxx').append(c);
+
+                    re_register();
+                }
+            });
         });
+
+        function re_register() {
+            $(":checkbox").off('change');
+            check_box_change();
+            re_checked();
+        }
+
+        // scroll voc
+        $(window).scroll(function () {
+            if ($(window).scrollTop() >= $(document).height() - $(window).height() - 10) {
+                pre_scroll_count += 1;
+                {#                document.getElementById("test").innerHTML = pre_scroll_count;#}
+                {#                while ($("tr").length < pre_scroll_count * vocs_count) {#}
+                {#                    // KP: javascript can only use this way to check empty array#}
+                {#                    if (pre_voc.length == 0) {#}
+                {#                        break;#}
+                {#                    }#}
+                {#                    $('#xxx').append(pre_voc[0]);#}
+                {#                    pre_voc.shift()#}
+                {#                }#}
+                // KP: encodeURIComponent(copy url_for schenario)
+                $.get('/thread_book_voc_total/' + encodeURIComponent("?book={{ book }}&value={{ value }}")).done(function (json) {
+                    // KP: use flask variable in javascript
+                    {#                        alert("{{ value }}");#}
+                    var content = json['vocs'];
+                    if (content == 'xxx') {
+                        return;
+                    }
+                    var c = '';
+                    var data_dic_length = JSON.parse(localStorage.getItem('data_dic' + '{{ book }}' + '{{ value }}')).length;
+                    var vc_total = $("tr").length - 1 - data_dic_length;
+                    var vocs_len = content.length;
+                    for (var i = vc_total; i < vocs_len; i++) {
+                        if (i >= pre_scroll_count * vocs_count) {
+                            break;
+                        }
+                        c += '<tr>';
+                        for (var j = 0; j < content[i].length; j++) {
+                            c += '<td>' + content[i][j] + '</td>';
+                        }
+                        c += '</tr>';
+                    }
+                    $('#xxx').append(c);
+                    re_register();
+                });
+            }
+        });
+
+        function js_refresh_ok(dataObject) {
+            $("tr").each(function () {
+                var tds = $(this).children();
+                if (dataObject['voc'] == $(tds[0]).text() &&
+                        dataObject['pos'] == $(tds[2]).text()) {
+                    if ($(tds[1]).find('input').is(':checked')) {
+                        $(tds[1]).find('input').prop("checked", false);
+                        return false;
+                    }
+                }
+            });
+        }
+
+        function js_refresh_remove(dataObject) {
+            $("tr").each(function () {
+                var tds = $(this).children();
+                if (dataObject['voc'] == $(tds[0]).text() &&
+                        dataObject['pos'] == $(tds[2]).text()) {
+                    if (!$(tds[1]).find('input').is(':checked')) {
+                        $(tds[1]).find('input').prop("checked", true);
+                        return false;
+                    }
+                }
+            });
+        }
+
+        function check_box_change() {
+            $(":checkbox").change(function () {
+                if (this.checked) {
+                    var voc = $(this).parent().prev().text();
+                    var pos = $(this).parent().next().text();
+                    var vhtml = $(this).parent().parent().html();
+                    vhtml = '<tr>' + vhtml + '</tr>';
+                    var dataObject = {'voc': voc, 'pos': pos, 'vhtml': vhtml};
+
+                    data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ book }}' + '{{ value }}'));
+                    data_dic.push(dataObject);
+                    localStorage.setItem('data_dic' + '{{ book }}' + '{{ value }}', JSON.stringify(data_dic));
+                    $(".badge").text(data_dic.length);
+
+                    if ($(this).parent().parent().attr("id") == 'xxx') {
+                        js_refresh_remove(dataObject);
+                    }
+                } else {
+                    var voc = $(this).parent().prev().text();
+                    var pos = $(this).parent().next().text();
+                    var vhtml = $(this).parent().parent().html();
+                    vhtml = '<tr>' + vhtml + '</tr>';
+                    var dataObject = {'voc': voc, 'pos': pos, 'vhtml': vhtml};
+
+                    data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ book }}' + '{{ value }}'));
+                    // KP: pop a value
+                    index = find_index(data_dic, dataObject);
+                    {#                    console.log(index);#}
+                    if (index > -1)
+                        data_dic.splice(index, 1);
+                    localStorage.setItem('data_dic' + '{{ book }}' + '{{ value }}', JSON.stringify(data_dic));
+                    $(".badge").text(data_dic.length);
+
+                    if ($(this).parent().parent().attr("id") == 'xxx') {
+                        js_refresh_ok(dataObject);
+                    }
+                }
+            });
+        }
+
+        function find_index(data_dic, dataObject) {
+            for (var i = 0; i < data_dic.length; i++) {
+                if (data_dic[i]['voc'] == dataObject['voc'] &&
+                        data_dic[i]['pos'] == dataObject['pos']) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        // for modal voc show
+        function show_voc() {
+            var pre = '<div class="table-responsive"><table class="table table-striped"><tbody>';
+            data_dic = JSON.parse(localStorage.getItem('data_dic' + '{{ book }}' + '{{ value }}'));
+            for (var i = 0; i < data_dic.length; i++) {
+                var ss = data_dic[i]['vhtml'];
+                ss = ss.replace('tr>', 'tr id="xxx">');
+                ss = ss.replace("\"checkbox\"", "\"checkbox\" checked");
+                {#                console.log(ss);#}
+                pre += ss;
+            }
+            pre += '</tbody></table></div>';
+            var g = $(".modal-insert");
+            g.empty();
+            g.append(pre);
+
+            $(":checkbox").off('change');
+            check_box_change();
+        }
 
         // first show voc
         function recursively_ajax(k) {
             k += 1;
             {#            TODO make same ajax a function to call#}
-            $.ajax({
+            return $.ajax({
                         method: "GET",
                         // KP: encodeURIComponent(copy url_for schenario)
                         url: '/thread_book_voc/' + encodeURIComponent("?value={{ value }}&book={{ book }}&page_inter={{ page_inter }}&k=" + k + "&pages={{ pages }}")
@@ -167,10 +404,8 @@
                         // KP: use flask variable in javascript
                         {#                        alert("{{ value }}");#}
                         var content = json['vocs'];
-                        console.log(content);
                         if (content != 'xxx') {
                             for (var voc = 0; voc < content.length; voc++) {
-                                console.log(voc);
                                 if (ex_append(content[voc][0], content[voc][2], content[voc][4]) == false) {
                                     var c = '<tr>';
                                     for (var i = 0; i < content[voc].length; i++) {
@@ -184,23 +419,15 @@
                                     }
                                 }
                             }
-                            $(':checkbox').off('click');
-                            checked();
-                            recursively_ajax(k);
+                            $(":checkbox").off('change');
+                            check_box_change();
+                            {#                            console.log(k);#}
+                            {#                                                         i TODO test view in mobile#}
+
                         }
                     });
         }
 
-        function checked() {
-            $(':checkbox').click(function () {
-                var val = $(this).is(':checked');
-                if (val) {
-                    $(".badge").text(++a_count_num);
-                } else {
-                    $(".badge").text(--a_count_num);
-                }
-            });
-        }
 
         function ex_append(voc, pos, ex) {
             var re_value = false;
@@ -208,7 +435,10 @@
                 var g = $(this).children("td:nth-child(odd)");
                 // KP: jquery's function need $ to trigger
                 if (($(g[0]).text() == voc) && ($(g[1]).text() == pos)) {
-                    $(g[2]).append('<br><br>' + ex);
+                    {#                    console.log(ex);#}
+                    if ($(g[2]).html().indexOf(ex) === -1) {
+                        $(g[2]).append('<br><br>' + ex);
+                    }
                     re_value = true;
                     // KP: return false to break, return true to continue
                     return false;
@@ -216,54 +446,6 @@
             });
             return re_value;
         }
-
-        // scroll voc
-        var vc_total = vocs_count;
-        $(window).scroll(function () {
-            if ($(window).scrollTop() >= $(document).height() - $(window).height() - 10) {
-                pre_scroll_count += 1;
-                {#                document.getElementById("test").innerHTML = pre_scroll_count;#}
-                while ($("tr").length < pre_scroll_count * vocs_count) {
-                    // KP: javascript can only use this way to check empty array
-                    if (pre_voc.length == 0) {
-                        break;
-                    }
-                    $('#xxx').append(pre_voc[0]);
-                    pre_voc.shift()
-                }
-                $(':checkbox').off('click');
-                checked();
-                $.ajax({
-                            method: "GET",
-                            // KP: encodeURIComponent(copy url_for schenario)
-                            url: '/thread_book_voc_total/' + encodeURIComponent("?book={{ book }}&value={{ value }}")
-                        })
-                        .done(function (json) {
-                            // KP: use flask variable in javascript
-                            {#                        alert("{{ value }}");#}
-                            var content = json['vocs'];
-                            if (content == 'xxx') {
-                                return;
-                            }
-                            var c = '';
-                            var vc_end = vc_total + vocs_count;
-                            if (vc_end > vocs_len) {
-                                vc_end = vocs_len;
-                            }
-                            for (i = vc_total; i < vc_end; i++) {
-                                c += '<tr>';
-                                for (j in content[i]) {
-                                    c += ('<td>' + content[i][j] + '</td>');
-                                }
-                                c += '</tr>';
-                            }
-                            vc_total += vocs_count;
-                            $('#xxx').append(c);
-                            $(':checkbox').off('click');
-                            checked();
-                        });
-            }
-        });
 
     </script>
 {% endblock %}

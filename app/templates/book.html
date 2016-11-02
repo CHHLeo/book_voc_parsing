@@ -34,7 +34,8 @@
                         </a>
                     </div>
                     <div class="col-sm-4 col-sm-offset-2">
-                        <div class="modal fade" id="modal-container-255468" role="dialog" aria-labelledby="myModalLabel"
+                        {#                        TODO add book quote#}
+                        <div class="modal fade" id={{ book }} role="dialog" aria-labelledby="myModalLabel"
                              aria-hidden="true">
                             <form action="{{ url_for('main.book') }}" method=post>
                                 <div class="modal-dialog">
@@ -51,14 +52,14 @@
                                         <div class="modal-footer">
                                             <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true">No
                                             </button>
-                                            <button class="btn btn-primary">Yes</button>
+                                            <button class="btn btn-primary" name='{{ book }}'>Yes</button>
                                         </div>
                                     </div>
                                 </div>
                             </form>
                         </div>
 
-                        <button class="close" aria-label="Close" id="modal-255468" href="#modal-container-255468"
+                        <button class="close" aria-label="Close" id="modal-255468" href=#{{ book }}
                                 role="button" data-toggle="modal"> ×
                         </button>
                         <a href="{{ url_for('main.book_voc', book=book, value='_Coca') }}">
