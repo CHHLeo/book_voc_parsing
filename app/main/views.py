@@ -280,7 +280,6 @@ def check_up(book, value, cs=0):
 @main.route('/book_voc/<book>?value=<value>', methods=['POST', 'GET'])
 @main.route('/book_voc/<book>?value=<value>?k=<k>', methods=['POST', 'GET'])
 def book_voc(book, value, k=0):
-    # TODO set pythonanywhere mysql
     if request.method == 'POST':
         update_wanted_dic()
         return redirect(url_for('.book_voc', book=book, value=value))
